@@ -1,0 +1,121 @@
+[
+  {
+    "name": "email_placeholder_default",
+    "body": "ping jane@acme.com now",
+    "redactions": "email address",
+    "redact_style": null,
+    "expected": "ping [redacted: email address per data-protection policy] now"
+  },
+  {
+    "name": "ssn_placeholder_default",
+    "body": "ssn 123-45-6789 end",
+    "redactions": "US SSN",
+    "redact_style": null,
+    "expected": "ssn [redacted: US Social Security number per data-protection policy] end"
+  },
+  {
+    "name": "credit_card_mask_keep_last_4",
+    "body": "card 4111111111111111 ok",
+    "redactions": "credit card number",
+    "redact_style": "credit card number=mask:*:4",
+    "expected": "card ************1111 ok"
+  },
+  {
+    "name": "mixed_email_masked_ssn_placeholder",
+    "body": "e jane@acme.com s 123-45-6789",
+    "redactions": "email address,US SSN",
+    "redact_style": "email address=mask:*:4",
+    "expected": "e *********.com s [redacted: US Social Security number per data-protection policy]"
+  },
+  {
+    "name": "short_value_fully_masked_when_keep_exceeds_length",
+    "body": "zip 12345 done",
+    "redactions": "postal code",
+    "redact_style": "postal code=mask:#:6",
+    "expected": "zip ##### done"
+  },
+  {
+    "name": "kind_redacted_but_style_names_other_kind_falls_to_placeholder",
+    "body": "card 4111111111111111 x",
+    "redactions": "credit card number",
+    "redact_style": "email address=mask:*:4",
+    "expected": "card [redacted: credit card number per data-protection policy] x"
+  },
+  {
+    "name": "empty_redactions_header_is_noop",
+    "body": "nothing here jane@acme.com",
+    "redactions": "",
+    "redact_style": null,
+    "expected": "nothing here jane@acme.com"
+  },
+  {
+    "name": "unrounded_float_is_not_a_card",
+    "body": "{\"ltv\":0.1791044776119403,\"n\":12}",
+    "redactions": "credit card number",
+    "redact_style": null,
+    "expected": "{\"ltv\":0.1791044776119403,\"n\":12}"
+  },
+  {
+    "name": "luhn_invalid_card_untouched",
+    "body": "card 4111 1111 1111 1112 ok",
+    "redactions": "credit card number",
+    "redact_style": null,
+    "expected": "card 4111 1111 1111 1112 ok"
+  },
+  {
+    "name": "spaced_card_placeholder",
+    "body": "card 4242 4242 4242 4242 ok",
+    "redactions": "credit card number",
+    "redact_style": null,
+    "expected": "card [redacted: credit card number per data-protection policy] ok"
+  },
+  {
+    "name": "card_inside_longer_digit_run_untouched",
+    "body": "id 94111111111111111123",
+    "redactions": "credit card number",
+    "redact_style": null,
+    "expected": "id 94111111111111111123"
+  },
+  {
+    "name": "grouped_iban_placeholder",
+    "body": "wire GB29 NWBK 6016 1331 9268 19 now",
+    "redactions": "IBAN",
+    "redact_style": null,
+    "expected": "wire [redacted: bank account (IBAN) per data-protection policy] now"
+  },
+  {
+    "name": "iban_trimmed_to_country_length",
+    "body": "GB29NWBK60161331926819 IS THE ACCOUNT",
+    "redactions": "IBAN",
+    "redact_style": null,
+    "expected": "[redacted: bank account (IBAN) per data-protection policy] IS THE ACCOUNT"
+  },
+  {
+    "name": "iban_bad_checksum_untouched",
+    "body": "wire GB28NWBK60161331926819 now",
+    "redactions": "IBAN",
+    "redact_style": null,
+    "expected": "wire GB28NWBK60161331926819 now"
+  },
+  {
+    "name": "iban_mask_keep_last_4",
+    "body": "acct DE89370400440532013000.",
+    "redactions": "IBAN",
+    "redact_style": "IBAN=mask:*:4",
+    "expected": "acct ******************3000."
+  },
+  {
+    "name": "converse_document_bytes_untouched_text_redacted",
+    "body": "{\"messages\": [{\"role\": \"user\", \"content\": [{\"document\": {\"format\": \"pdf\", \"name\": \"statements\", \"source\": {\"bytes\": \"JVBERi0xLjcKJcfsj6IKGB82WEST12345698765432/4111111111111111+QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZn\"}}}, {\"text\": \"pay GB29NWBK60161331926819 card 4111111111111111\"}]}]}",
+    "redactions": "IBAN,credit card number",
+    "redact_style": null,
+    "expected": "{\"messages\": [{\"role\": \"user\", \"content\": [{\"document\": {\"format\": \"pdf\", \"name\": \"statements\", \"source\": {\"bytes\": \"JVBERi0xLjcKJcfsj6IKGB82WEST12345698765432/4111111111111111+QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZn\"}}}, {\"text\": \"pay [redacted: bank account (IBAN) per data-protection policy] card [redacted: credit card number per data-protection policy]\"}]}]}"
+  },
+  {
+    "name": "data_url_untouched",
+    "body": "{\"image_url\":{\"url\":\"data:image/png;base64,GB82WEST12345698765432AAAA4111111111111111\"}}",
+    "redactions": "IBAN,credit card number",
+    "redact_style": null,
+    "expected": "{\"image_url\":{\"url\":\"data:image/png;base64,GB82WEST12345698765432AAAA4111111111111111\"}}"
+  }
+]

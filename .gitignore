@@ -1,0 +1,8 @@
+.aarvion.toml
+*.exe
+*.test
+*.out
+dist/
+.opa/
+.idea/
+.vscode/
