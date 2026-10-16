@@ -464,6 +464,30 @@ func (rt *OpaRuntime) Evaluate(input map[string]any) (map[string]any, error) {
 	return denyUndefined(), nil
 }
 
+func (rt *OpaRuntime) ParkCatalog() map[string]any {
+	result, _ := rt.data("config/park/catalog").(map[string]any)
+	return result
+}
+
+func (rt *OpaRuntime) ParkHoldSeconds() any {
+	return rt.data("config/park/hold_seconds")
+}
+
+func (rt *OpaRuntime) data(path string) any {
+	if rt.closed.Load() || rt.baseURL == "" {
+		return nil
+	}
+	resp, err := pyDo(rt.client, "GET", rt.baseURL+"/v1/data/"+path, nil, nil, opaClientTimeout)
+	if err != nil || resp.status != 200 {
+		return nil
+	}
+	doc, err := pyLoadsPlain(resp.body)
+	if err != nil {
+		return nil
+	}
+	return asMap(doc)["result"]
+}
+
 func (rt *OpaRuntime) Stop() error {
 	rt.mu.Lock()
 	defer rt.mu.Unlock()

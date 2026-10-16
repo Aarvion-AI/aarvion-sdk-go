@@ -24,6 +24,7 @@ type Config struct {
 	CPURL         string
 	FormatVersion int
 	EvaluatorURL  string
+	Hold          any
 }
 
 func NewConfig(agentID, runtimeKey, bundleURL, signingSecret, cpURL string) *Config {
@@ -134,6 +135,9 @@ func LoadConfig(path string) (*Config, error) {
 	cfg.FormatVersion = int(fv)
 	if ev, ok := data["evaluator_url"]; ok && ev != nil {
 		cfg.EvaluatorURL = tomlValueString(ev)
+	}
+	if hold, ok := data["hold"]; ok && hold != nil {
+		cfg.Hold = tomlValue(hold)
 	}
 	return cfg, nil
 }

@@ -229,7 +229,7 @@ func TestRecordJSONMatchesPythonDumps(t *testing.T) {
 	got := re.ReplaceAllString(text, "X")
 	want := strings.ReplaceAll(`{"replica_id": "abc123def456", X, "on_behalf_of": "#ud83d#ude80", "risk_tier": null, "method": "POST", `+
 		`"path": "/#u00e9", "host": "h", "decision": "deny", "policy_id": "a", "policy_ids": ["a", "b"], "reason": "r#u2029#u007f", `+
-		`"redactions": null, "latency_ms": 7.25, "enforced": true, "call_site": "x.go:1", "prev_hash": "0", X}`, "#", "\\")
+		`"redactions": null, "latency_ms": 7.25, "enforced": true, "call_site": "x.go:1", "sdk_version": "0.2.0", "prev_hash": "0", X}`, "#", "\\")
 	if got != want {
 		t.Fatalf("got\n%s\nwant\n%s", got, want)
 	}

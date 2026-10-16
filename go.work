@@ -8,10 +8,10 @@ use (
 	./openai
 )
 
-replace github.com/Aarvion-AI/aarvion-sdk-go v0.1.0 => ./
+replace github.com/Aarvion-AI/aarvion-sdk-go v0.2.0 => ./
 
-replace github.com/Aarvion-AI/aarvion-sdk-go/anthropic v0.1.0 => ./anthropic
+replace github.com/Aarvion-AI/aarvion-sdk-go/anthropic v0.2.0 => ./anthropic
 
-replace github.com/Aarvion-AI/aarvion-sdk-go/bedrock v0.1.0 => ./bedrock
+replace github.com/Aarvion-AI/aarvion-sdk-go/bedrock v0.2.0 => ./bedrock
 
-replace github.com/Aarvion-AI/aarvion-sdk-go/openai v0.1.0 => ./openai
+replace github.com/Aarvion-AI/aarvion-sdk-go/openai v0.2.0 => ./openai

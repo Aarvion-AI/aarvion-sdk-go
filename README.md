@@ -12,7 +12,7 @@ tagged `source: sdk` (dp_id `sdk`).
 
 ## Status
 
-Alpha, version 0.1.0.
+Alpha, version 0.2.0.
 
 ## Modules
 
@@ -30,16 +30,16 @@ need newer Go versions because the AWS, OpenAI and Anthropic SDKs do.
 ## Install
 
 ```bash
-go get github.com/Aarvion-AI/aarvion-sdk-go@v0.1.0
-go install github.com/Aarvion-AI/aarvion-sdk-go/cmd/aarvion@v0.1.0
+go get github.com/Aarvion-AI/aarvion-sdk-go@v0.2.0
+go install github.com/Aarvion-AI/aarvion-sdk-go/cmd/aarvion@v0.2.0
 ```
 
 Add the module for each client you use:
 
 ```bash
-go get github.com/Aarvion-AI/aarvion-sdk-go/bedrock@v0.1.0
-go get github.com/Aarvion-AI/aarvion-sdk-go/openai@v0.1.0
-go get github.com/Aarvion-AI/aarvion-sdk-go/anthropic@v0.1.0
+go get github.com/Aarvion-AI/aarvion-sdk-go/bedrock@v0.2.0
+go get github.com/Aarvion-AI/aarvion-sdk-go/openai@v0.2.0
+go get github.com/Aarvion-AI/aarvion-sdk-go/anthropic@v0.2.0
 ```
 
 ## Quickstart
@@ -83,6 +83,8 @@ decisions, stops OPA and closes the queue. If you only want to push decisions, c
    query string, headers, whole body) and asks the local OPA for `data.envoy.authz.allow`.
 2. Deny: the request is not sent. Your client gets a `403` response with the same headers and JSON
    body the sidecar returns (`x-policy-violated`, `x-policy-reason`, `x-aarvion-policies-violated`).
+   When the rule says "hold for approval", the request waits for a person instead (see
+   [Hold for approval](#hold-for-approval-park)).
 3. Allow with redactions: PII in the body is replaced or masked before it leaves your process.
 4. Every decision is written to a local hash chain (`provenance.db`) and pushed to the control plane.
 
@@ -98,6 +100,46 @@ session, err := aarvion.Init(aarvion.WithMonitor(true))
 Denies are recorded with `enforced=false` and the request is sent. Allowed requests are still
 redacted, the same as in Python.
 
+## Hold for approval (Park)
+
+Some rules hold a request for a person to approve instead of blocking it. The SDK then:
+
+1. Makes a fingerprint of the exact request (method, host, path, query and body).
+2. Asks the control plane whether it is already approved, or already ran.
+3. If not, opens an approval ticket and waits (the agent's "Approval hold" in the dashboard, 50 seconds by default).
+4. When a person approves it in the dashboard, sends the request once and saves the response.
+   An identical later call gets the saved response with header `x-aarvion-replayed`, so it never runs twice.
+
+| Outcome | What your code sees |
+|---|---|
+| Approved | The normal response |
+| Denied, expired or cancelled | A `403` response with `x-aarvion-park-ticket` and `ticket` in the body |
+| Still waiting when the hold ends | `*aarvion.ActionParked` error from `client.Do` |
+| An identical approved call is running | `*aarvion.ActionInProgress` error |
+| It already ran, response too large to keep | `*aarvion.ActionAlreadyExecuted` error |
+| Control plane unreachable | A `503` response; nothing is sent |
+
+```go
+resp, err := client.Do(req)
+var parked *aarvion.ActionParked
+if errors.As(err, &parked) {
+    ok, err := parked.Wait(ctx)
+    if ok && err == nil {
+        resp, err = client.Do(sameReq)
+    }
+}
+```
+
+The hold time comes from `WithHold(d)` or `WithHoldUntilDecision()`, then `AARVION_PARK_HOLD`, then the
+agent's "Approval hold" in the dashboard, then `hold` in `.aarvion.toml`, then 50 seconds. The dashboard
+value is read for every held request, so a change there applies about a minute later. `0` only opens the
+ticket; `until_decision` waits until a person decides. Park must be turned on for the tenant in Aarvion.
+Monitor mode never holds.
+
+The audit log gets a row when a request is held (shown as Blocked). When the approved request is then sent,
+a second row is written as allowed with "approved under ticket ..., sent (HTTP status)". A replay is written
+as allowed with "replayed the saved result of approval ticket ..., not sent again".
+
 ## Init options
 
 | Option | Python argument | Default |
@@ -109,6 +151,7 @@ redacted, the same as in Python.
 | `WithMonitor(bool)` | `monitor` | `false` |
 | `WithStateDir(dir)` | `state_dir` | `~/.aarvion/<agent_id>` |
 | `WithStartRuntime(bool)` | `start_runtime` | `true` |
+| `WithHold(d)` / `WithHoldUntilDecision()` | `hold` | `AARVION_PARK_HOLD`, then the dashboard "Approval hold", then `hold` in the config, then 50 seconds |
 
 ## Configuration
 
@@ -128,6 +171,7 @@ Other environment variables:
 | `AARVION_MAX_BODY_BYTES` | Body inspection limit |
 | `AARVION_EVALUATOR_URL` | Evaluator for `GovernReply` |
 | `AARVION_API_KEY` | Used by `aarvion init` when `--api-key` is not given |
+| `AARVION_PARK_HOLD` | Seconds a held request waits for approval, or `until_decision` |
 
 When OPA is not found, the SDK downloads OPA 1.17.1, checks its SHA-256 and keeps it in
 `~/.aarvion/opa/1.17.1/`.
@@ -200,7 +244,9 @@ These are the places where Go works differently:
 - `Wrap` governs a `*http.Client` (or `Transport` a `http.RoundTripper`). Go clients have no
   shared base type like `httpx.Client`, so OpenAI, Anthropic and Bedrock have their own modules.
 - Bedrock clients cannot be changed after they are built, so you pass `Govern()` when you build the
-  client (or per call). A deny comes back wrapped in the AWS operation error.
+  client (or per call). A deny comes back wrapped in the AWS operation error. A hold for approval is
+  blocked the same way, as in Python's boto3 support, because the AWS client cannot wait for a person.
+- `ActionParked.Wait` takes a `context.Context` instead of a timeout in seconds.
 - The policy input headers are the headers set on the Go request. Python's `httpx` adds its own
   default headers (host, accept, user-agent and so on); Go adds those later in the transport.
 - The call site is the first stack frame outside this SDK and `net/http`, as `file:line`.

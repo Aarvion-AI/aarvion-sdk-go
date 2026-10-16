@@ -1,6 +1,7 @@
 package aarvion
 
 import (
+	"errors"
 	"runtime"
 	"strconv"
 	"strings"
@@ -50,6 +51,8 @@ type Governor struct {
 	eval     Evaluator
 	recorder DecisionRecorder
 	monitor  bool
+	parker   *Parker
+	catalog  func() map[string]any
 }
 
 func NewGovernor(evaluator Evaluator, recorder DecisionRecorder, monitor bool) *Governor {
@@ -58,19 +61,39 @@ func NewGovernor(evaluator Evaluator, recorder DecisionRecorder, monitor bool) *
 
 func (g *Governor) Monitor() bool { return g.monitor }
 
+func (g *Governor) SetParker(parker *Parker, catalog func() map[string]any) *Governor {
+	g.parker = parker
+	g.catalog = catalog
+	if parker != nil {
+		parker.setRecorder(g.recorder)
+	}
+	return g
+}
+
+func (g *Governor) Parker() *Parker { return g.parker }
+
+func (g *Governor) parkCatalog() map[string]any {
+	if g.catalog != nil {
+		if c := g.catalog(); c != nil {
+			return c
+		}
+	}
+	return FallbackCatalog()
+}
+
 func (g *Governor) Evaluator() Evaluator { return g.eval }
 
 func (g *Governor) Recorder() DecisionRecorder { return g.recorder }
 
 func (g *Governor) Process(method, rawURL string, headers map[string]string, body []byte) (string, error) {
-	return g.process(method, rawURL, headers, decodeIgnore(body))
+	return g.process(method, rawURL, headers, decodeIgnore(body), body)
 }
 
 func (g *Governor) ProcessText(method, rawURL string, headers map[string]string, text string) (string, error) {
-	return g.process(method, rawURL, headers, text)
+	return g.process(method, rawURL, headers, text, []byte(text))
 }
 
-func (g *Governor) process(method, rawURL string, headers map[string]string, text string) (string, error) {
+func (g *Governor) process(method, rawURL string, headers map[string]string, text string, raw []byte) (string, error) {
 	if maxBodyBytesErr != nil {
 		return "", maxBodyBytesErr
 	}
@@ -110,7 +133,16 @@ func (g *Governor) process(method, rawURL string, headers map[string]string, tex
 		if g.monitor {
 			return text, nil
 		}
-		return "", deniedFromDecision(decision, hdrs)
+		err := deniedFromDecision(decision, hdrs)
+		var denied *PolicyDenied
+		if g.parker != nil && headerOr(hdrs, "x-aarvion-action", "") == "park" && errors.As(err, &denied) {
+			action, aerr := buildParkAction(method, rawURL, headers, raw, denied, decision, g.parkCatalog())
+			if aerr != nil {
+				return "", aerr
+			}
+			return "", &Parked{Denied: denied, Action: action}
+		}
+		return "", err
 	}
 
 	newBody, err := ApplyDecision(decision, text)

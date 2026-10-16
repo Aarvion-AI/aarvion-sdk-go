@@ -3,10 +3,10 @@ module github.com/Aarvion-AI/aarvion-sdk-go/examples
 go 1.25.0
 
 require (
-	github.com/Aarvion-AI/aarvion-sdk-go v0.1.0
-	github.com/Aarvion-AI/aarvion-sdk-go/anthropic v0.1.0
-	github.com/Aarvion-AI/aarvion-sdk-go/bedrock v0.1.0
-	github.com/Aarvion-AI/aarvion-sdk-go/openai v0.1.0
+	github.com/Aarvion-AI/aarvion-sdk-go v0.2.0
+	github.com/Aarvion-AI/aarvion-sdk-go/anthropic v0.2.0
+	github.com/Aarvion-AI/aarvion-sdk-go/bedrock v0.2.0
+	github.com/Aarvion-AI/aarvion-sdk-go/openai v0.2.0
 	github.com/anthropics/anthropic-sdk-go v1.78.0
 	github.com/aws/aws-sdk-go-v2 v1.47.1
 	github.com/aws/aws-sdk-go-v2/config v1.33.6

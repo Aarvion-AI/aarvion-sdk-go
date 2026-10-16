@@ -3,7 +3,7 @@ module github.com/Aarvion-AI/aarvion-sdk-go/bedrock
 go 1.24
 
 require (
-	github.com/Aarvion-AI/aarvion-sdk-go v0.1.0
+	github.com/Aarvion-AI/aarvion-sdk-go v0.2.0
 	github.com/aws/aws-sdk-go-v2 v1.47.1
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.6
 	github.com/aws/aws-sdk-go-v2/service/bedrockruntime v1.63.1

@@ -332,3 +332,20 @@ func TestStreamingOperationsAreGoverned(t *testing.T) {
 		t.Fatal("sent")
 	}
 }
+
+func TestParkVerdictStillBlocksBeforeSigning(t *testing.T) {
+	srv, cap := newServer(t)
+	park := map[string]any{"allowed": false, "http_status": int64(403),
+		"headers": map[string]any{"x-policy-violated": "p.v1", "x-policy-reason": "needs approval", "x-aarvion-action": "park"},
+		"park":    map[string]any{"rules": []any{map[string]any{"id": "p.v1", "reason": "needs approval"}}}}
+	parker := aarvion.NewParker(aarvion.NewParkClient("https://cp.invalid", "acme", "agt_x", "k", nil), aarvion.DefaultHold())
+	c := newClient(srv, GovernWith(governor(park).SetParker(parker, nil)))
+	err := converse(c, "hi")
+	var d *aarvion.PolicyDenied
+	if !errors.As(err, &d) || d.PolicyID != "p.v1" {
+		t.Fatalf("got %v", err)
+	}
+	if len(cap.bodies) != 0 {
+		t.Fatal("request was sent")
+	}
+}

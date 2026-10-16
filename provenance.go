@@ -187,6 +187,7 @@ func (r *Recorder) Record(in RecordInput) (map[string]any, error) {
 		"latency_ms", in.LatencyMs,
 		"enforced", enforced,
 		"call_site", in.CallSite,
+		"sdk_version", Version,
 		"prev_hash", r.prevHash,
 		"row_hash", rh,
 	)

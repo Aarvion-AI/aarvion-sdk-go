@@ -68,6 +68,10 @@ func (t *governingTransport) RoundTrip(req *http.Request) (*http.Response, error
 	}
 	newBody, err := t.governor.Process(req.Method, req.URL.String(), flattenHeaders(req.Header), original)
 	if err != nil {
+		var parked *Parked
+		if errors.As(err, &parked) && t.governor.parker != nil {
+			return t.runParked(parked, req, original)
+		}
 		var denied *PolicyDenied
 		if errors.As(err, &denied) {
 			return deniedResponse(denied, req)
@@ -91,8 +95,68 @@ func (t *governingTransport) RoundTrip(req *http.Request) (*http.Response, error
 	return t.inner.RoundTrip(out)
 }
 
+func (t *governingTransport) runParked(parked *Parked, req *http.Request, original []byte) (*http.Response, error) {
+	parker := t.governor.parker
+	rel, err := parker.resolve(req.Context(), parked.Action)
+	if err != nil {
+		var denied *PolicyDenied
+		if errors.As(err, &denied) {
+			return deniedResponse(denied, req)
+		}
+		return nil, err
+	}
+	if rel.replay {
+		return replayedResponse(rel, req), nil
+	}
+	out := req.Clone(req.Context())
+	if original != nil {
+		out.Body = io.NopCloser(bytes.NewReader(original))
+		out.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(original)), nil }
+	}
+	resp, err := t.inner.RoundTrip(out)
+	if err != nil {
+		parker.writeReceipt(rel.ticket, 502, nil)
+		return nil, err
+	}
+	content, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		parker.writeReceipt(rel.ticket, 502, nil)
+		return nil, err
+	}
+	parker.writeReceipt(rel.ticket, resp.StatusCode, content)
+	resp.Body = io.NopCloser(bytes.NewReader(content))
+	resp.ContentLength = int64(len(content))
+	return resp, nil
+}
+
+func replayedResponse(rel *parkRelease, req *http.Request) *http.Response {
+	h := http.Header{}
+	h.Set("x-aarvion-replayed", rel.ticket)
+	h.Set("Content-Length", strconv.Itoa(len(rel.content)))
+	status := strconv.Itoa(rel.status)
+	if text := http.StatusText(rel.status); text != "" {
+		status += " " + text
+	}
+	return &http.Response{
+		Status:        status,
+		StatusCode:    rel.status,
+		Proto:         "HTTP/1.1",
+		ProtoMajor:    1,
+		ProtoMinor:    1,
+		Header:        h,
+		Body:          io.NopCloser(bytes.NewReader(rel.content)),
+		ContentLength: int64(len(rel.content)),
+		Request:       req,
+	}
+}
+
 func deniedPayload(d *PolicyDenied) *jsonObject {
-	return obj("error", "policy_denied", "policy", d.PolicyID, "policies", d.PolicyIDs, "reason", d.Reason)
+	o := obj("error", "policy_denied", "policy", d.PolicyID, "policies", d.PolicyIDs, "reason", d.Reason)
+	if d.Ticket != "" {
+		o.set("ticket", d.Ticket)
+	}
+	return o
 }
 
 func deniedResponse(d *PolicyDenied, req *http.Request) (*http.Response, error) {
@@ -104,6 +168,9 @@ func deniedResponse(d *PolicyDenied, req *http.Request) (*http.Response, error) 
 	h.Set("x-policy-violated", d.PolicyID)
 	h.Set("x-policy-reason", d.Reason)
 	h.Set("x-aarvion-policies-violated", strings.Join(d.PolicyIDs, ","))
+	if d.Ticket != "" {
+		h.Set("x-aarvion-park-ticket", d.Ticket)
+	}
 	h.Set("Content-Length", strconv.Itoa(len(body)))
 	h.Set("Content-Type", "application/json")
 	status := strconv.Itoa(d.HTTPStatus)

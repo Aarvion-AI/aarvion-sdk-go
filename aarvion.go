@@ -5,9 +5,10 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
-const Version = "0.0.1"
+const Version = "0.2.0"
 
 func TenantFromBundleURL(url string) (string, error) {
 	p, err := urlSplit(url)
@@ -31,6 +32,7 @@ type Session struct {
 	Runtime  *OpaRuntime
 	Recorder *Recorder
 	Governor *Governor
+	Parker   *Parker
 
 	convMu     sync.Mutex
 	convClient *http.Client
@@ -51,6 +53,9 @@ func (s *Session) Close() error {
 	}
 	if err := s.Recorder.Close(); err != nil {
 		return err
+	}
+	if s.Parker != nil {
+		s.Parker.Close()
 	}
 	s.convMu.Lock()
 	c := s.convClient
@@ -86,6 +91,7 @@ type initOptions struct {
 	monitor      bool
 	stateDir     string
 	startRuntime bool
+	hold         any
 }
 
 type Option func(*initOptions)
@@ -107,6 +113,10 @@ func WithMonitor(monitor bool) Option { return func(o *initOptions) { o.monitor 
 func WithStateDir(dir string) Option { return func(o *initOptions) { o.stateDir = dir } }
 
 func WithStartRuntime(start bool) Option { return func(o *initOptions) { o.startRuntime = start } }
+
+func WithHold(d time.Duration) Option { return func(o *initOptions) { o.hold = d } }
+
+func WithHoldUntilDecision() Option { return func(o *initOptions) { o.hold = HoldUntilDecision } }
 
 var (
 	activeMu sync.RWMutex
@@ -175,13 +185,42 @@ func Init(opts ...Option) (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	governor := NewGovernor(rt, recorder, o.monitor)
+	holdValue := o.hold
+	if holdValue == nil {
+		if env := os.Getenv("AARVION_PARK_HOLD"); env != "" {
+			holdValue = env
+		}
+	}
+	var explicit *Hold
+	if holdValue != nil {
+		h, err := ParseHold(holdValue)
+		if err != nil {
+			return nil, err
+		}
+		explicit = &h
+	}
+	var fileHold any
+	if cfg.Hold != nil {
+		h, err := ParseHold(cfg.Hold)
+		if err != nil {
+			return nil, err
+		}
+		fileHold = h
+	}
+	parker := NewParkerWithDashboard(NewParkClient(cfg.CPURL, tenant, cfg.AgentID, cfg.RuntimeKey, nil), explicit,
+		func() any {
+			if v := rt.ParkHoldSeconds(); v != nil {
+				return v
+			}
+			return fileHold
+		})
+	governor := NewGovernor(rt, recorder, o.monitor).SetParker(parker, rt.ParkCatalog)
 	if o.startRuntime {
 		if err := rt.Start(DefaultReadyTimeout); err != nil {
 			return nil, err
 		}
 	}
-	s := &Session{Config: cfg, Runtime: rt, Recorder: recorder, Governor: governor}
+	s := &Session{Config: cfg, Runtime: rt, Recorder: recorder, Governor: governor, Parker: parker}
 	activeMu.Lock()
 	active = s
 	activeMu.Unlock()

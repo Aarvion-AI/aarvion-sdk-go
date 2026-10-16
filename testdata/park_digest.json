@@ -1,0 +1,1745 @@
+{
+  "digest_version": 1,
+  "jcs": [
+    {
+      "name": "key order and nesting",
+      "json": "{\"b\":2,\"a\":{\"d\":[3,{\"z\":1,\"y\":2}],\"c\":null}}",
+      "canonical": "{\"a\":{\"c\":null,\"d\":[3,{\"y\":2,\"z\":1}]},\"b\":2}"
+    },
+    {
+      "name": "whitespace removed",
+      "json": "{ \"a\" : [ 1 , 2 ] ,\n \"b\" : true }",
+      "canonical": "{\"a\":[1,2],\"b\":true}"
+    },
+    {
+      "name": "integers",
+      "json": "[0,-0,1,-1,10,9007199254740991,-9007199254740991]",
+      "canonical": "[0,0,1,-1,10,9007199254740991,-9007199254740991]"
+    },
+    {
+      "name": "floats es6",
+      "json": "[1.0,4.50,0.002,1e21,1e20,1e-7,1e-6,1.2345678901234568e+20,333333333.33333329,1e30,-1.5e-9,0.1,5e-324,1.7976931348623157e308]",
+      "canonical": "[1,4.5,0.002,1e+21,100000000000000000000,1e-7,0.000001,123456789012345680000,333333333.3333333,1e+30,-1.5e-9,0.1,5e-324,1.7976931348623157e+308]"
+    },
+    {
+      "name": "string escapes",
+      "json": "[\"\\u0000\\u0001\\b\\t\\n\\f\\r\\u001f\",\"quote\\\"back\\\\slash\",\"/solidus\",\"\\u007f\",\"caf\\u00e9\",\"\\u20ac\",\"\\ud83d\\ude00\"]",
+      "canonical": "[\"\\u0000\\u0001\\b\\t\\n\\f\\r\\u001f\",\"quote\\\"back\\\\slash\",\"/solidus\",\"\",\"café\",\"€\",\"😀\"]"
+    },
+    {
+      "name": "utf16 key order",
+      "json": "{\"\\u20ac\":\"euro\",\"\\r\":\"cr\",\"\\ud83d\\ude00\":\"emoji\",\"1\":\"one\",\"\\u0080\":\"c1\",\"\\u00f6\":\"o-umlaut\",\"\\ufb33\":\"dalet\"}",
+      "canonical": "{\"\\r\":\"cr\",\"1\":\"one\",\"\":\"c1\",\"ö\":\"o-umlaut\",\"€\":\"euro\",\"😀\":\"emoji\",\"דּ\":\"dalet\"}"
+    },
+    {
+      "name": "empty containers",
+      "json": "{\"a\":{},\"b\":[],\"c\":\"\"}",
+      "canonical": "{\"a\":{},\"b\":[],\"c\":\"\"}"
+    },
+    {
+      "name": "booleans and null",
+      "json": "[true,false,null]",
+      "canonical": "[true,false,null]"
+    }
+  ],
+  "http": [
+    {
+      "name": "json body",
+      "input": {
+        "scope": "caller:usr_42",
+        "method": "post",
+        "host": "API.Stripe.com",
+        "path": "/v1/refunds",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"charge\":\"ch_1\",\"amount\":500}",
+        "volatile": []
+      },
+      "canonical": "{\"body\":{\"amount\":500,\"charge\":\"ch_1\"},\"host\":\"api.stripe.com\",\"kind\":\"http\",\"method\":\"POST\",\"path\":\"/v1/refunds\",\"query\":[],\"scope\":\"caller:usr_42\",\"v\":1}",
+      "digest": "b0e5b698118968f049c4709d7c23e453e79b7ffb473699ebb250f01ddfd169e2"
+    },
+    {
+      "name": "json body same content reordered",
+      "input": {
+        "scope": "caller:usr_42",
+        "method": "POST",
+        "host": "api.stripe.com",
+        "path": "/v1/refunds",
+        "query": "",
+        "content_type": "application/json; charset=utf-8",
+        "body": "{ \"amount\" : 500, \"charge\" : \"ch_1\" }",
+        "volatile": []
+      },
+      "canonical": "{\"body\":{\"amount\":500,\"charge\":\"ch_1\"},\"host\":\"api.stripe.com\",\"kind\":\"http\",\"method\":\"POST\",\"path\":\"/v1/refunds\",\"query\":[],\"scope\":\"caller:usr_42\",\"v\":1}",
+      "digest": "b0e5b698118968f049c4709d7c23e453e79b7ffb473699ebb250f01ddfd169e2"
+    },
+    {
+      "name": "json body volatile fields dropped",
+      "input": {
+        "scope": "caller:usr_42",
+        "method": "POST",
+        "host": "api.stripe.com",
+        "path": "/v1/refunds",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"charge\":\"ch_1\",\"amount\":500,\"idempotency_key\":\"k-9\",\"request_id\":\"r-1\"}",
+        "volatile": [
+          "idempotency_key",
+          "request_id"
+        ]
+      },
+      "canonical": "{\"body\":{\"amount\":500,\"charge\":\"ch_1\"},\"host\":\"api.stripe.com\",\"kind\":\"http\",\"method\":\"POST\",\"path\":\"/v1/refunds\",\"query\":[],\"scope\":\"caller:usr_42\",\"v\":1}",
+      "digest": "b0e5b698118968f049c4709d7c23e453e79b7ffb473699ebb250f01ddfd169e2"
+    },
+    {
+      "name": "different caller scope",
+      "input": {
+        "scope": "caller:usr_43",
+        "method": "POST",
+        "host": "api.stripe.com",
+        "path": "/v1/refunds",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"charge\":\"ch_1\",\"amount\":500}",
+        "volatile": []
+      },
+      "canonical": "{\"body\":{\"amount\":500,\"charge\":\"ch_1\"},\"host\":\"api.stripe.com\",\"kind\":\"http\",\"method\":\"POST\",\"path\":\"/v1/refunds\",\"query\":[],\"scope\":\"caller:usr_43\",\"v\":1}",
+      "digest": "b1f7d4ee866d17e3a5ecb942eb4ac0cba8b51a5f56bd838162291b79811fcd2a"
+    },
+    {
+      "name": "vendor json type",
+      "input": {
+        "scope": "session:s-1",
+        "method": "PATCH",
+        "host": "api.example.com",
+        "path": "/v2/users/7",
+        "query": "",
+        "content_type": "application/merge-patch+json",
+        "body": "{\"role\":\"admin\"}",
+        "volatile": []
+      },
+      "canonical": "{\"body\":{\"role\":\"admin\"},\"host\":\"api.example.com\",\"kind\":\"http\",\"method\":\"PATCH\",\"path\":\"/v2/users/7\",\"query\":[],\"scope\":\"session:s-1\",\"v\":1}",
+      "digest": "a0dadff75f8f2420f8a0f23a70ac9ad9d69aacf2f70f6099444ba6fcabb7adce"
+    },
+    {
+      "name": "query sorted, kept encoded",
+      "input": {
+        "scope": "agent",
+        "method": "GET",
+        "host": "api.example.com",
+        "path": "/v1/search",
+        "query": "q=a%20b&b=2&a=1&a=0&flag",
+        "content_type": null,
+        "body": "",
+        "volatile": []
+      },
+      "canonical": "{\"body\":null,\"host\":\"api.example.com\",\"kind\":\"http\",\"method\":\"GET\",\"path\":\"/v1/search\",\"query\":[[\"a\",\"0\"],[\"a\",\"1\"],[\"b\",\"2\"],[\"flag\",\"\"],[\"q\",\"a%20b\"]],\"scope\":\"agent\",\"v\":1}",
+      "digest": "61d6d3bcc3c0d454eba1ca2a5f7373724723360535097af110b2f53fa4d227bd"
+    },
+    {
+      "name": "non json body hashed raw",
+      "input": {
+        "scope": "agent",
+        "method": "POST",
+        "host": "hooks.example.com",
+        "path": "/upload",
+        "query": "",
+        "content_type": "text/plain",
+        "body": "hello world",
+        "volatile": []
+      },
+      "canonical": "{\"body\":{\"sha256\":\"b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9\"},\"host\":\"hooks.example.com\",\"kind\":\"http\",\"method\":\"POST\",\"path\":\"/upload\",\"query\":[],\"scope\":\"agent\",\"v\":1}",
+      "digest": "4eac7770af3aa89edc0a0e952ceb8d560e611510ac69e52bc8851595d9063496"
+    },
+    {
+      "name": "invalid json falls back to raw hash",
+      "input": {
+        "scope": "agent",
+        "method": "POST",
+        "host": "hooks.example.com",
+        "path": "/x",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"a\":",
+        "volatile": []
+      },
+      "canonical": "{\"body\":{\"sha256\":\"ffb38b22ee3e0ca90325ebce953a9846990f292faf44c50498771602e31cb61f\"},\"host\":\"hooks.example.com\",\"kind\":\"http\",\"method\":\"POST\",\"path\":\"/x\",\"query\":[],\"scope\":\"agent\",\"v\":1}",
+      "digest": "d03fac04d63682f60e7472adb679b7768a273c6bc4a0333b3006debb953ced36"
+    },
+    {
+      "name": "NaN in json falls back to raw hash",
+      "input": {
+        "scope": "agent",
+        "method": "POST",
+        "host": "hooks.example.com",
+        "path": "/x",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"a\":NaN}",
+        "volatile": []
+      },
+      "canonical": "{\"body\":{\"sha256\":\"0ce896293703c00486a61416514acc94d2919f4bd42141dedcca7ddfb97ec422\"},\"host\":\"hooks.example.com\",\"kind\":\"http\",\"method\":\"POST\",\"path\":\"/x\",\"query\":[],\"scope\":\"agent\",\"v\":1}",
+      "digest": "3d0951211fbe0d3b0281778386c40a048cdbee603e6dd617cf29d61cafb7808f"
+    },
+    {
+      "name": "non object json body",
+      "input": {
+        "scope": "agent",
+        "method": "PUT",
+        "host": "api.example.com",
+        "path": "/v1/list",
+        "query": "",
+        "content_type": "application/json",
+        "body": "[3,1,{\"b\":1,\"a\":2}]",
+        "volatile": []
+      },
+      "canonical": "{\"body\":[3,1,{\"a\":2,\"b\":1}],\"host\":\"api.example.com\",\"kind\":\"http\",\"method\":\"PUT\",\"path\":\"/v1/list\",\"query\":[],\"scope\":\"agent\",\"v\":1}",
+      "digest": "9866c79915226d077587e53f12fb28bb223380c11748cefd8ad9a1756ae04606"
+    },
+    {
+      "name": "unicode json body",
+      "input": {
+        "scope": "agent",
+        "method": "POST",
+        "host": "api.example.com",
+        "path": "/v1/notes",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"text\":\"caf\\u00e9 \\u20ac\",\"emoji\":\"\\ud83d\\ude00\"}",
+        "volatile": []
+      },
+      "canonical": "{\"body\":{\"emoji\":\"😀\",\"text\":\"café €\"},\"host\":\"api.example.com\",\"kind\":\"http\",\"method\":\"POST\",\"path\":\"/v1/notes\",\"query\":[],\"scope\":\"agent\",\"v\":1}",
+      "digest": "f8ce0b735e0bc8e2778582d202cc7bbbf1ab37c542690e4f0add5cab216ad259"
+    },
+    {
+      "name": "catalog volatile: idempotency key and request id excluded",
+      "rule_ids": [
+        "starter.bfsi.direct_disbursement.v1"
+      ],
+      "input": {
+        "scope": "caller:usr_42",
+        "method": "POST",
+        "host": "lending.example.com",
+        "path": "/v1/disbursements",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"loan_id\":\"LN-7\",\"amount\":250000,\"idempotency_key\":\"a1f3\",\"request_id\":\"req-1\"}",
+        "volatile": [
+          "idempotencyKey",
+          "idempotency_key",
+          "requestId",
+          "request_id"
+        ]
+      },
+      "canonical": "{\"body\":{\"amount\":250000,\"loan_id\":\"LN-7\"},\"host\":\"lending.example.com\",\"kind\":\"http\",\"method\":\"POST\",\"path\":\"/v1/disbursements\",\"query\":[],\"scope\":\"caller:usr_42\",\"v\":1}",
+      "digest": "5a0cd67aeb5c0f0404a3d789919be0614c8e6e626652cf241d6e0271157c8a29"
+    },
+    {
+      "name": "catalog volatile: retry with a new idempotency key",
+      "rule_ids": [
+        "starter.bfsi.direct_disbursement.v1"
+      ],
+      "input": {
+        "scope": "caller:usr_42",
+        "method": "POST",
+        "host": "lending.example.com",
+        "path": "/v1/disbursements",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"request_id\":\"req-2\",\"idempotency_key\":\"b7c2\",\"amount\":250000,\"loan_id\":\"LN-7\"}",
+        "volatile": [
+          "idempotencyKey",
+          "idempotency_key",
+          "requestId",
+          "request_id"
+        ]
+      },
+      "canonical": "{\"body\":{\"amount\":250000,\"loan_id\":\"LN-7\"},\"host\":\"lending.example.com\",\"kind\":\"http\",\"method\":\"POST\",\"path\":\"/v1/disbursements\",\"query\":[],\"scope\":\"caller:usr_42\",\"v\":1}",
+      "digest": "5a0cd67aeb5c0f0404a3d789919be0614c8e6e626652cf241d6e0271157c8a29"
+    },
+    {
+      "name": "catalog volatile: different amount",
+      "rule_ids": [
+        "starter.bfsi.direct_disbursement.v1"
+      ],
+      "input": {
+        "scope": "caller:usr_42",
+        "method": "POST",
+        "host": "lending.example.com",
+        "path": "/v1/disbursements",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"loan_id\":\"LN-7\",\"amount\":260000,\"idempotency_key\":\"a1f3\",\"request_id\":\"req-1\"}",
+        "volatile": [
+          "idempotencyKey",
+          "idempotency_key",
+          "requestId",
+          "request_id"
+        ]
+      },
+      "canonical": "{\"body\":{\"amount\":260000,\"loan_id\":\"LN-7\"},\"host\":\"lending.example.com\",\"kind\":\"http\",\"method\":\"POST\",\"path\":\"/v1/disbursements\",\"query\":[],\"scope\":\"caller:usr_42\",\"v\":1}",
+      "digest": "636238154758d84a29fafa9cdb2f2a506b11e46123a92691181decdfc74396e1"
+    },
+    {
+      "name": "catalog volatile: slack client_msg_id excluded",
+      "rule_ids": [
+        "starter.slack.chat.post.v1"
+      ],
+      "input": {
+        "scope": "session:s-9",
+        "method": "POST",
+        "host": "slack.com",
+        "path": "/api/chat.postMessage",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"channel\":\"C042\",\"text\":\"deploy done\",\"client_msg_id\":\"5b1c9e2a-3f70-4c1e-9d55-0a8f2b6c7d10\"}",
+        "volatile": [
+          "client_msg_id"
+        ]
+      },
+      "canonical": "{\"body\":{\"channel\":\"C042\",\"text\":\"deploy done\"},\"host\":\"slack.com\",\"kind\":\"http\",\"method\":\"POST\",\"path\":\"/api/chat.postMessage\",\"query\":[],\"scope\":\"session:s-9\",\"v\":1}",
+      "digest": "6243aadfc2ff76b9815af49798ed089c307937d6732991b77e77bb947ecd5c07"
+    }
+  ],
+  "tool": [
+    {
+      "name": "mcp tool call",
+      "input": {
+        "scope": "caller:usr_42",
+        "entity_id": "agt_mcp1",
+        "tool": "delete_user",
+        "args": {
+          "user_id": "u_9",
+          "hard": true
+        },
+        "tool_def": "3f2a9c",
+        "volatile": []
+      },
+      "canonical": "{\"args\":{\"hard\":true,\"user_id\":\"u_9\"},\"entity_id\":\"agt_mcp1\",\"kind\":\"tool\",\"scope\":\"caller:usr_42\",\"tool\":\"delete_user\",\"tool_def\":\"3f2a9c\",\"v\":1}",
+      "digest": "477d76a91ca6981ba5b8d6c958bffa05077af93c49a1613c4ad2ab9472efe2e8"
+    },
+    {
+      "name": "same args reordered",
+      "input": {
+        "scope": "caller:usr_42",
+        "entity_id": "agt_mcp1",
+        "tool": "delete_user",
+        "args": {
+          "hard": true,
+          "user_id": "u_9"
+        },
+        "tool_def": "3f2a9c",
+        "volatile": []
+      },
+      "canonical": "{\"args\":{\"hard\":true,\"user_id\":\"u_9\"},\"entity_id\":\"agt_mcp1\",\"kind\":\"tool\",\"scope\":\"caller:usr_42\",\"tool\":\"delete_user\",\"tool_def\":\"3f2a9c\",\"v\":1}",
+      "digest": "477d76a91ca6981ba5b8d6c958bffa05077af93c49a1613c4ad2ab9472efe2e8"
+    },
+    {
+      "name": "tool definition changed",
+      "input": {
+        "scope": "caller:usr_42",
+        "entity_id": "agt_mcp1",
+        "tool": "delete_user",
+        "args": {
+          "user_id": "u_9",
+          "hard": true
+        },
+        "tool_def": "77b1e0",
+        "volatile": []
+      },
+      "canonical": "{\"args\":{\"hard\":true,\"user_id\":\"u_9\"},\"entity_id\":\"agt_mcp1\",\"kind\":\"tool\",\"scope\":\"caller:usr_42\",\"tool\":\"delete_user\",\"tool_def\":\"77b1e0\",\"v\":1}",
+      "digest": "3b2c4c7baa742769742e70b14dea6abdb33f79d3c5069e5a0dfe22fb491dbb4e"
+    },
+    {
+      "name": "guard shell tool, volatile dropped",
+      "input": {
+        "scope": "session:sess-1",
+        "entity_id": "agt_guard",
+        "tool": "Bash",
+        "args": {
+          "command": "gh pr merge 12",
+          "description": "merge",
+          "timeout": 120000
+        },
+        "volatile": [
+          "description",
+          "timeout"
+        ],
+        "tool_def": ""
+      },
+      "canonical": "{\"args\":{\"command\":\"gh pr merge 12\"},\"entity_id\":\"agt_guard\",\"kind\":\"tool\",\"scope\":\"session:sess-1\",\"tool\":\"Bash\",\"tool_def\":\"\",\"v\":1}",
+      "digest": "0b5fccfb7e3ed1c1d9fab7d97df200931030f15d12d269dcd5fa5fda4dd84dc9"
+    },
+    {
+      "name": "no tool def",
+      "input": {
+        "scope": "agent",
+        "entity_id": "agt_x",
+        "tool": "send_email",
+        "args": {
+          "to": [
+            "a@x.com",
+            "b@x.com"
+          ],
+          "subject": "Hi",
+          "body": "line1\nline2"
+        },
+        "tool_def": "",
+        "volatile": []
+      },
+      "canonical": "{\"args\":{\"body\":\"line1\\nline2\",\"subject\":\"Hi\",\"to\":[\"a@x.com\",\"b@x.com\"]},\"entity_id\":\"agt_x\",\"kind\":\"tool\",\"scope\":\"agent\",\"tool\":\"send_email\",\"tool_def\":\"\",\"v\":1}",
+      "digest": "fe98a5532c67e27782635f95a2a206f537565883a2f2db2dbb0d23029fac55d3"
+    },
+    {
+      "name": "float args",
+      "input": {
+        "scope": "agent",
+        "entity_id": "agt_x",
+        "tool": "transfer",
+        "args": {
+          "amount": 1e+21,
+          "rate": 0.1,
+          "count": 3
+        },
+        "tool_def": "",
+        "volatile": []
+      },
+      "canonical": "{\"args\":{\"amount\":1e+21,\"count\":3,\"rate\":0.1},\"entity_id\":\"agt_x\",\"kind\":\"tool\",\"scope\":\"agent\",\"tool\":\"transfer\",\"tool_def\":\"\",\"v\":1}",
+      "digest": "19dda1a4326e4fddc29c7a157d933a09ae4c76d7e03741eb55c823bdb84d87fa"
+    }
+  ],
+  "scope": [
+    {
+      "caller_principal_id": "usr_42",
+      "session_id": "s-1",
+      "expected": "caller:usr_42"
+    },
+    {
+      "caller_principal_id": null,
+      "session_id": "s-1",
+      "expected": "session:s-1"
+    },
+    {
+      "caller_principal_id": "",
+      "session_id": "",
+      "expected": "agent"
+    },
+    {
+      "caller_principal_id": null,
+      "session_id": null,
+      "expected": "agent"
+    }
+  ],
+  "park_catalog": {
+    "fallback": {
+      "http": "{method} {host}{path}",
+      "tool": "Run {tool}"
+    },
+    "packs": {
+      "aws": {
+        "volatile": {
+          "http": [
+            "ClientToken",
+            "clientToken"
+          ],
+          "tool": [
+            "description",
+            "timeout",
+            "timeout_ms"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "AWS {method} {host}{path}",
+            "rules": {
+              "dynamodb.delete": "Delete from DynamoDB table {body.TableName}",
+              "ec2.terminate": "Terminate EC2 instance {body.InstanceId.1}",
+              "iam.create_key": "Create an access key for {body.UserName}",
+              "kms.destroy": "Destroy or disable KMS key {body.KeyId}",
+              "rds.delete": "Delete RDS database {body.DBInstanceIdentifier|body.DBClusterIdentifier}",
+              "s3.delete": "Delete {host}{path}"
+            }
+          },
+          "tool": {
+            "default": "Run {args.command|tool}"
+          }
+        }
+      },
+      "bfsi": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        }
+      },
+      "cfpb": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "CFPB {method} {path}",
+            "rules": {
+              "elder_exploitation_hold": "Risky payment of {body.amount} by an older customer"
+            }
+          }
+        }
+      },
+      "cloudflare": {
+        "volatile": {
+          "tool": [
+            "description",
+            "timeout",
+            "timeout_ms"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "Cloudflare {method} {path}",
+            "rules": {
+              "dns": "Change DNS record {body.name} in zone {path.4}"
+            }
+          },
+          "tool": {
+            "default": "Run {args.command|tool}"
+          }
+        }
+      },
+      "database": {
+        "volatile": {
+          "tool": [
+            "description",
+            "timeout",
+            "timeout_ms"
+          ]
+        },
+        "summary": {
+          "tool": {
+            "default": "Run {args.command|tool}"
+          }
+        }
+      },
+      "destructive_fs": {
+        "volatile": {
+          "tool": [
+            "description",
+            "timeout",
+            "timeout_ms"
+          ]
+        },
+        "summary": {
+          "tool": {
+            "default": "Run {args.command|tool}"
+          }
+        }
+      },
+      "discord": {
+        "volatile": {
+          "http": [
+            "nonce"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "Discord {method} {path}"
+          },
+          "tool": {
+            "default": "Discord {args.action|tool}: {args.to|args.target}"
+          }
+        }
+      },
+      "email": {
+        "summary": {
+          "http": {
+            "default": "Email API {method} {host}{path}",
+            "rules": {
+              "send": "Send email \"{body.subject|body.Subject}\" to {body.to|body.To}"
+            }
+          }
+        }
+      },
+      "fdic": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "FDIC {method} {path}",
+            "rules": {
+              "affiliate_transaction": "Affiliate transaction {method} {path}",
+              "ctr_cash_over_10k": "Cash transaction over $10,000: {body.amount}",
+              "fincen_314a_match": "FinCEN 314(a) match on {method} {path}",
+              "human_review_adverse": "AI denial for review: {body.decision.model_id}",
+              "insider_loan_approval": "Insider loan of {body.amount} needs board approval",
+              "potential_match": "Possible OFAC match: {body.beneficiary.name|body.customer.name} {body.amount}",
+              "red_flags": "New card soon after an address change for {body.customer.id}"
+            }
+          }
+        }
+      },
+      "fed": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "Federal Reserve {method} {path}",
+            "rules": {
+              "affiliate_transaction": "Affiliate transaction {method} {path}",
+              "ctr_cash_over_10k": "Cash transaction over $10,000: {body.amount}",
+              "fincen_314a_match": "FinCEN 314(a) match on {method} {path}",
+              "human_review_adverse": "AI denial for review: {body.decision.model_id}",
+              "insider_loan_approval": "Insider loan of {body.amount} needs board approval",
+              "potential_match": "Possible OFAC match: {body.beneficiary.name|body.customer.name} {body.amount}",
+              "red_flags": "New card soon after an address change for {body.customer.id}"
+            }
+          }
+        }
+      },
+      "fincen": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "FinCEN {method} {path}",
+            "rules": {
+              "ctr_cash_over_10k": "Cash transaction over $10,000: {body.amount}",
+              "fincen_314a_match": "FinCEN 314(a) match on {method} {path}"
+            }
+          }
+        }
+      },
+      "github": {
+        "volatile": {
+          "tool": [
+            "description",
+            "timeout",
+            "timeout_ms"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "GitHub {method} {path}",
+            "rules": {
+              "branch_protection": "Change branch protection in {path.2}/{path.3}",
+              "collaborator.add": "Add {path.5} to {path.2}/{path.3}",
+              "contents.write": "Commit to {path.2}/{path.3}: {body.message}",
+              "deployment.create": "Deploy {body.ref} to {body.environment} in {path.2}/{path.3}",
+              "issue.comment": "Comment on #{path.5} in {path.2}/{path.3}",
+              "issue.create": "Open issue \"{body.title}\" in {path.2}/{path.3}",
+              "pr.create": "Open PR \"{body.title}\" in {path.2}/{path.3}",
+              "pr.merge": "Merge PR #{path.5} in {path.2}/{path.3}",
+              "ref.delete": "Delete {path.6}/{path.7} in {path.2}/{path.3}",
+              "release.create": "Publish release {body.tag_name} in {path.2}/{path.3}",
+              "repo.create": "Create repo {body.name}",
+              "repo.delete": "Delete repo {path.2}/{path.3}",
+              "secret.write": "Set secret at {path}",
+              "workflow.dispatch": "Run workflow {path.6|body.event_type} in {path.2}/{path.3}"
+            }
+          },
+          "tool": {
+            "default": "Run {args.command|tool}"
+          }
+        }
+      },
+      "gworkspace": {
+        "summary": {
+          "http": {
+            "default": "Google {method} {host}{path}",
+            "rules": {
+              "calendar.event.delete": "Delete calendar event {path.6}",
+              "drive.file.delete": "Delete Drive file {path.4}",
+              "drive.permission.anyone": "Share Drive file {path.4} with anyone",
+              "drive.permission.external": "Share Drive file {path.4} with {body.emailAddress|body.domain}",
+              "gmail.send": "Send a Gmail message",
+              "gmail.settings.forwarding": "Forward Gmail to {body.forwardingEmail|body.emailAddress}"
+            }
+          }
+        }
+      },
+      "infrastructure": {
+        "volatile": {
+          "tool": [
+            "description",
+            "timeout",
+            "timeout_ms"
+          ]
+        },
+        "summary": {
+          "tool": {
+            "default": "Run {args.command|tool}"
+          }
+        }
+      },
+      "irdai": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        }
+      },
+      "microsoft": {
+        "volatile": {
+          "http": [
+            "transactionId"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "Microsoft Graph {method} {path}",
+            "rules": {
+              "mail.send": "Send an Outlook message"
+            }
+          }
+        }
+      },
+      "ncua": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "NCUA {method} {path}",
+            "rules": {
+              "ctr_cash_over_10k": "Cash transaction over $10,000: {body.amount}",
+              "fincen_314a_match": "FinCEN 314(a) match on {method} {path}",
+              "human_review_adverse": "AI denial for review: {body.decision.model_id}",
+              "insider_loan_approval": "Insider loan of {body.amount} needs board approval",
+              "potential_match": "Possible OFAC match: {body.beneficiary.name|body.customer.name} {body.amount}",
+              "red_flags": "New card soon after an address change for {body.customer.id}"
+            }
+          }
+        }
+      },
+      "occ": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "OCC {method} {path}",
+            "rules": {
+              "affiliate_transaction": "Affiliate transaction {method} {path}",
+              "ctr_cash_over_10k": "Cash transaction over $10,000: {body.amount}",
+              "fincen_314a_match": "FinCEN 314(a) match on {method} {path}",
+              "human_review_adverse": "AI denial for review: {body.decision.model_id}",
+              "insider_loan_approval": "Insider loan of {body.amount} needs board approval",
+              "potential_match": "Possible OFAC match: {body.beneficiary.name|body.customer.name} {body.amount}",
+              "red_flags": "New card soon after an address change for {body.customer.id}"
+            }
+          }
+        }
+      },
+      "ofac": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "OFAC {method} {path}",
+            "rules": {
+              "potential_match": "Possible OFAC match: {body.beneficiary.name|body.customer.name} {body.amount}"
+            }
+          }
+        }
+      },
+      "prod_blast_radius": {
+        "summary": {
+          "http": {
+            "default": "{method} {host}{path} in production"
+          }
+        }
+      },
+      "publishing": {
+        "volatile": {
+          "tool": [
+            "description",
+            "timeout",
+            "timeout_ms"
+          ]
+        },
+        "summary": {
+          "tool": {
+            "default": "Run {args.command|tool}"
+          }
+        }
+      },
+      "reddit": {
+        "summary": {
+          "http": {
+            "default": "Reddit {method} {path}",
+            "rules": {
+              "comment": "Comment on Reddit {body.thing_id}",
+              "dm": "Message {body.to} on Reddit",
+              "submit": "Post \"{body.title}\" to r/{body.sr}"
+            }
+          },
+          "tool": {
+            "default": "Reddit {args.action|tool}: {args.to|args.target}"
+          }
+        }
+      },
+      "remote_exec": {
+        "volatile": {
+          "tool": [
+            "description",
+            "timeout",
+            "timeout_ms"
+          ]
+        },
+        "summary": {
+          "tool": {
+            "default": "Run {args.command|tool}"
+          }
+        }
+      },
+      "secrets_exfil": {
+        "volatile": {
+          "tool": [
+            "description",
+            "timeout",
+            "timeout_ms"
+          ]
+        }
+      },
+      "slack": {
+        "volatile": {
+          "http": [
+            "client_msg_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "Call Slack {path.2}",
+            "rules": {
+              "channel.create": "Create Slack channel {body.name}",
+              "chat.delete": "Delete Slack message {body.ts} in {body.channel}",
+              "chat.edit": "Edit Slack message {body.ts} in {body.channel}",
+              "chat.post": "Post to Slack {body.channel}",
+              "external_share": "Share Slack {body.channel} outside the workspace",
+              "file.public": "Make Slack file {body.file} public"
+            }
+          },
+          "tool": {
+            "default": "Slack {args.action|tool}: {args.to|args.target}"
+          }
+        }
+      },
+      "state_ca": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "California DFPI {method} {path}",
+            "rules": {
+              "admt_notice": "Automated decision without notice: {body.decision.model_id}",
+              "human_option": "Customer asked for a person"
+            }
+          }
+        }
+      },
+      "state_co": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "Colorado Division of Banking {method} {path}",
+            "rules": {
+              "admt_notice": "Automated decision without notice: {body.decision.model_id}"
+            }
+          }
+        }
+      },
+      "state_ct": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        }
+      },
+      "state_fl": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "Florida OFR {method} {path}",
+            "rules": {
+              "elder_hold": "Possible elder exploitation: payment of {body.amount}"
+            }
+          }
+        }
+      },
+      "state_ga": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "Georgia Department of Banking and Finance {method} {path}",
+            "rules": {
+              "elder_hold": "Possible elder exploitation: payment of {body.amount}"
+            }
+          }
+        }
+      },
+      "state_il": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        }
+      },
+      "state_ma": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        }
+      },
+      "state_me": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        }
+      },
+      "state_nc": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "North Carolina Commissioner of Banks {method} {path}",
+            "rules": {
+              "elder_hold": "Possible elder exploitation: payment of {body.amount}"
+            }
+          }
+        }
+      },
+      "state_ny": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "New York DFS {method} {path}",
+            "rules": {
+              "privileged_access": "Privileged action {method} {path}",
+              "sanctions_alert": "Sanctions alert on payment of {body.amount}"
+            }
+          }
+        }
+      },
+      "state_tx": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "Texas Department of Banking {method} {path}",
+            "rules": {
+              "elder_hold": "Possible elder exploitation: payment of {body.amount}"
+            }
+          }
+        }
+      },
+      "state_ut": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        }
+      },
+      "state_wa": {
+        "volatile": {
+          "http": [
+            "idempotencyKey",
+            "idempotency_key",
+            "requestId",
+            "request_id"
+          ]
+        }
+      },
+      "stripe": {
+        "volatile": {
+          "tool": [
+            "description",
+            "timeout",
+            "timeout_ms"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "Stripe {method} {path}",
+            "rules": {
+              "charge": "Charge {body.amount} {body.currency}",
+              "payout": "Pay out {body.amount} {body.currency}",
+              "refund": "Refund {body.amount} on {body.charge|body.payment_intent|path.3}",
+              "transfer": "Transfer {body.amount} {body.currency} to {body.destination}"
+            }
+          },
+          "tool": {
+            "default": "Run {args.command|tool}"
+          }
+        }
+      },
+      "telegram": {
+        "summary": {
+          "http": {
+            "default": "Telegram {path.2}",
+            "rules": {
+              "send": "Send Telegram message to {body.chat_id}"
+            }
+          },
+          "tool": {
+            "default": "Telegram {args.action|tool}: {args.to|args.target|args.chat_id}"
+          }
+        }
+      },
+      "whatsapp": {
+        "volatile": {
+          "http": [
+            "biz_opaque_callback_data"
+          ]
+        },
+        "summary": {
+          "http": {
+            "default": "WhatsApp {method} {path}",
+            "rules": {
+              "message.send": "Send WhatsApp message to {body.to}",
+              "message.template": "Send WhatsApp template to {body.to}"
+            }
+          },
+          "tool": {
+            "default": "WhatsApp {args.action|tool}: {args.to|args.target}"
+          }
+        }
+      }
+    }
+  },
+  "summary_max": 200,
+  "volatile": [
+    {
+      "name": "one pack",
+      "rule_ids": [
+        "starter.discord.message.send.v1"
+      ],
+      "kind": "http",
+      "expected": [
+        "nonce"
+      ]
+    },
+    {
+      "name": "union of two packs, sorted",
+      "rule_ids": [
+        "starter.slack.chat.post.v1",
+        "starter.bfsi.direct_disbursement.v1"
+      ],
+      "kind": "http",
+      "expected": [
+        "client_msg_id",
+        "idempotencyKey",
+        "idempotency_key",
+        "requestId",
+        "request_id"
+      ]
+    },
+    {
+      "name": "duplicate rule ids",
+      "rule_ids": [
+        "starter.slack.chat.post.v1",
+        "starter.slack.chat.post.v1",
+        "starter.slack.chat.delete.v1"
+      ],
+      "kind": "http",
+      "expected": [
+        "client_msg_id"
+      ]
+    },
+    {
+      "name": "http list is separate from tool list",
+      "rule_ids": [
+        "starter.github.pr.merge.v1"
+      ],
+      "kind": "http",
+      "expected": []
+    },
+    {
+      "name": "shell tool fields",
+      "rule_ids": [
+        "starter.github.pr.merge.v1"
+      ],
+      "kind": "tool",
+      "expected": [
+        "description",
+        "timeout",
+        "timeout_ms"
+      ]
+    },
+    {
+      "name": "pack-level rule id",
+      "rule_ids": [
+        "starter.secrets_exfil.github_token.v1",
+        "starter.prod_blast_radius.v1"
+      ],
+      "kind": "tool",
+      "expected": [
+        "description",
+        "timeout",
+        "timeout_ms"
+      ]
+    },
+    {
+      "name": "authored policy id has none",
+      "rule_ids": [
+        "refund_cap_v1"
+      ],
+      "kind": "http",
+      "expected": []
+    },
+    {
+      "name": "pack not in catalog has none",
+      "rule_ids": [
+        "starter.rate_cap.v1"
+      ],
+      "kind": "http",
+      "expected": []
+    },
+    {
+      "name": "id without version is not a starter id",
+      "rule_ids": [
+        "starter.slack.chat.post"
+      ],
+      "kind": "http",
+      "expected": []
+    },
+    {
+      "name": "id with other prefix is not a starter id",
+      "rule_ids": [
+        "custom.slack.chat.post.v1",
+        "Starter.slack.chat.post.v1"
+      ],
+      "kind": "http",
+      "expected": []
+    },
+    {
+      "name": "no rules",
+      "rule_ids": [],
+      "kind": "tool",
+      "expected": []
+    }
+  ],
+  "summary": [
+    {
+      "name": "stripe refund, form body",
+      "rule_ids": [
+        "starter.stripe.refund.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "api.stripe.com",
+        "path": "/v1/refunds",
+        "query": "",
+        "content_type": "application/x-www-form-urlencoded",
+        "body": "charge=ch_8812&amount=120000"
+      },
+      "expected": "Refund 120000 on ch_8812"
+    },
+    {
+      "name": "stripe refund, charge from path",
+      "rule_ids": [
+        "starter.stripe.refund.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "api.stripe.com",
+        "path": "/v1/charges/ch_9/refunds",
+        "query": "",
+        "content_type": "application/x-www-form-urlencoded",
+        "body": "amount=500"
+      },
+      "expected": "Refund 500 on ch_9"
+    },
+    {
+      "name": "stripe refund, alternative field",
+      "rule_ids": [
+        "starter.stripe.refund.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "api.stripe.com",
+        "path": "/v1/refunds",
+        "query": "",
+        "content_type": "application/x-www-form-urlencoded; charset=utf-8",
+        "body": "payment_intent=pi_3&amount=500"
+      },
+      "expected": "Refund 500 on pi_3"
+    },
+    {
+      "name": "stripe payout",
+      "rule_ids": [
+        "starter.stripe.payout.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "api.stripe.com",
+        "path": "/v1/payouts",
+        "query": "",
+        "content_type": "application/x-www-form-urlencoded",
+        "body": "amount=5000&currency=usd"
+      },
+      "expected": "Pay out 5000 usd"
+    },
+    {
+      "name": "pack default when the rule has no template",
+      "rule_ids": [
+        "starter.stripe.coupon.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "post",
+        "host": "api.stripe.com",
+        "path": "/v1/coupons",
+        "query": "",
+        "content_type": "application/x-www-form-urlencoded",
+        "body": "percent_off=100"
+      },
+      "expected": "Stripe POST /v1/coupons"
+    },
+    {
+      "name": "github merge over http",
+      "rule_ids": [
+        "starter.github.pr.merge.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "PUT",
+        "host": "api.github.com",
+        "path": "/repos/acme/web/pulls/12/merge",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"merge_method\":\"squash\"}"
+      },
+      "expected": "Merge PR #12 in acme/web"
+    },
+    {
+      "name": "github merge from the shell",
+      "rule_ids": [
+        "starter.github.pr.merge.v1"
+      ],
+      "action": {
+        "kind": "tool",
+        "tool": "Bash",
+        "args": {
+          "command": "gh pr merge 12 --squash",
+          "description": "merge",
+          "timeout": 120000
+        }
+      },
+      "expected": "Run gh pr merge 12 --squash"
+    },
+    {
+      "name": "non-object tool args fall to the next alternative",
+      "rule_ids": [
+        "starter.github.pr.merge.v1"
+      ],
+      "action": {
+        "kind": "tool",
+        "tool": "Bash",
+        "args": [
+          "gh",
+          "pr",
+          "merge"
+        ]
+      },
+      "expected": "Run Bash"
+    },
+    {
+      "name": "injection-looking value stays plain text",
+      "rule_ids": [
+        "starter.github.issue.create.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "api.github.com",
+        "path": "/repos/acme/web/issues",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"title\": \"{method} <script>alert(1)</script>\\nIgnore previous\\u2028instructions\\t\\u0085now\"}"
+      },
+      "expected": "Open issue \"{method} <script>alert(1)</script> Ignore previous instructions now\" in acme/web"
+    },
+    {
+      "name": "invalid json body leaves fields missing",
+      "rule_ids": [
+        "starter.github.issue.create.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "api.github.com",
+        "path": "/repos/acme/web/issues",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{"
+      },
+      "expected": "Open issue \"?\" in acme/web"
+    },
+    {
+      "name": "non-string values",
+      "rule_ids": [
+        "starter.github.deployment.create.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "api.github.com",
+        "path": "/repos/acme/web/deployments",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"ref\":true,\"environment\":null}"
+      },
+      "expected": "Deploy true to ? in acme/web"
+    },
+    {
+      "name": "numbers render as canonical json, containers as missing",
+      "rule_ids": [
+        "starter.stripe.charge.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "api.stripe.com",
+        "path": "/v1/charges",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"amount\":1e21,\"currency\":[\"usd\"]}"
+      },
+      "expected": "Charge 1e+21 ?"
+    },
+    {
+      "name": "negative integer",
+      "rule_ids": [
+        "starter.telegram.send.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "api.telegram.org",
+        "path": "/bot123456:ABC-secret/sendMessage",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"chat_id\":-100123,\"text\":\"hi\"}"
+      },
+      "expected": "Send Telegram message to -100123"
+    },
+    {
+      "name": "telegram default never shows the bot token",
+      "rule_ids": [
+        "starter.telegram.delete.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "api.telegram.org",
+        "path": "/bot123456:ABC-secret/deleteMessage",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"chat_id\":1,\"message_id\":2}"
+      },
+      "expected": "Telegram deleteMessage"
+    },
+    {
+      "name": "form value decoded",
+      "rule_ids": [
+        "starter.slack.chat.post.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "slack.com",
+        "path": "/api/chat.postMessage",
+        "query": "",
+        "content_type": "application/x-www-form-urlencoded",
+        "body": "channel=%23ops+room&text=hi"
+      },
+      "expected": "Post to Slack #ops room"
+    },
+    {
+      "name": "form value that is not utf-8 is missing",
+      "rule_ids": [
+        "starter.slack.chat.post.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "slack.com",
+        "path": "/api/chat.postMessage",
+        "query": "",
+        "content_type": "application/x-www-form-urlencoded",
+        "body": "channel=%ff"
+      },
+      "expected": "Post to Slack ?"
+    },
+    {
+      "name": "malformed escape stays literal",
+      "rule_ids": [
+        "starter.slack.chat.post.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "slack.com",
+        "path": "/api/chat.postMessage",
+        "query": "",
+        "content_type": "application/x-www-form-urlencoded",
+        "body": "channel=%zz1&channel=second"
+      },
+      "expected": "Post to Slack %zz1"
+    },
+    {
+      "name": "missing field",
+      "rule_ids": [
+        "starter.slack.chat.delete.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "slack.com",
+        "path": "/api/chat.delete",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"channel\":\"C042\"}"
+      },
+      "expected": "Delete Slack message ? in C042"
+    },
+    {
+      "name": "whitespace-only value is missing",
+      "rule_ids": [
+        "starter.whatsapp.message.send.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "graph.facebook.com",
+        "path": "/v19.0/1029/messages",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"to\":\"   \"}"
+      },
+      "expected": "Send WhatsApp message to ?"
+    },
+    {
+      "name": "comms tool",
+      "rule_ids": [
+        "starter.slack.chat.delete.v1"
+      ],
+      "action": {
+        "kind": "tool",
+        "tool": "message",
+        "args": {
+          "action": "delete",
+          "channel": "slack",
+          "to": "#ops"
+        }
+      },
+      "expected": "Slack delete: #ops"
+    },
+    {
+      "name": "dotted form key",
+      "rule_ids": [
+        "starter.aws.ec2.terminate.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "ec2.us-east-1.amazonaws.com",
+        "path": "/",
+        "query": "",
+        "content_type": "application/x-www-form-urlencoded",
+        "body": "Action=TerminateInstances&InstanceId.1=i-0abc"
+      },
+      "expected": "Terminate EC2 instance i-0abc"
+    },
+    {
+      "name": "second alternative",
+      "rule_ids": [
+        "starter.aws.rds.delete.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "rds.amazonaws.com",
+        "path": "/",
+        "query": "",
+        "content_type": "application/x-www-form-urlencoded",
+        "body": "Action=DeleteDBCluster&DBClusterIdentifier=prod-db"
+      },
+      "expected": "Delete RDS database prod-db"
+    },
+    {
+      "name": "rule template beats another pack's default",
+      "rule_ids": [
+        "starter.stripe.refund.v1",
+        "starter.prod_blast_radius.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "POST",
+        "host": "api.stripe.com",
+        "path": "/v1/refunds",
+        "query": "",
+        "content_type": "application/x-www-form-urlencoded",
+        "body": "charge=ch_1&amount=1"
+      },
+      "expected": "Refund 1 on ch_1"
+    },
+    {
+      "name": "first rule id in sorted order wins",
+      "rule_ids": [
+        "starter.stripe.refund.v1",
+        "starter.github.pr.merge.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "PUT",
+        "host": "api.github.com",
+        "path": "/repos/acme/web/pulls/7/merge",
+        "query": "",
+        "content_type": "application/json",
+        "body": ""
+      },
+      "expected": "Merge PR #7 in acme/web"
+    },
+    {
+      "name": "pack default for a pack-level rule id",
+      "rule_ids": [
+        "starter.prod_blast_radius.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "DELETE",
+        "host": "API.Prod.Example.com",
+        "path": "/v1/users/7",
+        "query": "force=1",
+        "content_type": "application/json",
+        "body": ""
+      },
+      "expected": "DELETE api.prod.example.com/v1/users/7 in production"
+    },
+    {
+      "name": "http fallback",
+      "rule_ids": [
+        "refund_cap_v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "post",
+        "host": "Pay.Example.com",
+        "path": "/refunds",
+        "query": "x=1",
+        "content_type": "application/json",
+        "body": "{\"amount\":60000}"
+      },
+      "expected": "POST pay.example.com/refunds"
+    },
+    {
+      "name": "tool fallback",
+      "rule_ids": [
+        "mcp.delete_user.v1"
+      ],
+      "action": {
+        "kind": "tool",
+        "tool": "delete_user",
+        "args": {
+          "user_id": "u_9"
+        }
+      },
+      "expected": "Run delete_user"
+    },
+    {
+      "name": "length cap counts code points",
+      "rule_ids": [
+        "starter.github.contents.write.v1"
+      ],
+      "action": {
+        "kind": "http",
+        "method": "PUT",
+        "host": "api.github.com",
+        "path": "/repos/acme/web/contents/a.txt",
+        "query": "",
+        "content_type": "application/json",
+        "body": "{\"message\": \"\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\\ud83d\\ude00\"}"
+      },
+      "expected": "Commit to acme/web: 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀..."
+    },
+    {
+      "name": "query placeholders, first value, decoded",
+      "template": "{query.q} {query.a} [{query.flag}]",
+      "action": {
+        "kind": "http",
+        "method": "GET",
+        "host": "api.example.com",
+        "path": "/v1/search",
+        "query": "q=a%20b+c&a=1&a=0&flag",
+        "content_type": "application/json",
+        "body": ""
+      },
+      "expected": "a b c 1 [?]"
+    },
+    {
+      "name": "unknown placeholders and stray braces",
+      "template": "{nope} {path.0} {Method} {} {method",
+      "action": {
+        "kind": "http",
+        "method": "GET",
+        "host": "api.example.com",
+        "path": "/x",
+        "query": "",
+        "content_type": "application/json",
+        "body": ""
+      },
+      "expected": "? ? {Method} {} {method"
+    },
+    {
+      "name": "empty path segments are skipped",
+      "template": "{path.1}-{path.2}-{path.3}",
+      "action": {
+        "kind": "http",
+        "method": "GET",
+        "host": "h",
+        "path": "//a//b/",
+        "query": "",
+        "content_type": "application/json",
+        "body": ""
+      },
+      "expected": "a-b-?"
+    },
+    {
+      "name": "tool names do not resolve on http",
+      "template": "{tool} {args.x}",
+      "action": {
+        "kind": "http",
+        "method": "GET",
+        "host": "h",
+        "path": "/",
+        "query": "",
+        "content_type": "application/json",
+        "body": ""
+      },
+      "expected": "? ?"
+    },
+    {
+      "name": "http names do not resolve on tools",
+      "template": "{method} {path} {body.x} {args.x}",
+      "action": {
+        "kind": "tool",
+        "tool": "t",
+        "args": {
+          "x": 1.5
+        }
+      },
+      "expected": "? ? ? 1.5"
+    }
+  ]
+}

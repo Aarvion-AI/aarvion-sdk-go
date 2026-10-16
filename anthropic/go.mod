@@ -3,7 +3,7 @@ module github.com/Aarvion-AI/aarvion-sdk-go/anthropic
 go 1.24
 
 require (
-	github.com/Aarvion-AI/aarvion-sdk-go v0.1.0
+	github.com/Aarvion-AI/aarvion-sdk-go v0.2.0
 	github.com/anthropics/anthropic-sdk-go v1.78.0
 )
 

@@ -3,7 +3,7 @@ module github.com/Aarvion-AI/aarvion-sdk-go/openai
 go 1.25.0
 
 require (
-	github.com/Aarvion-AI/aarvion-sdk-go v0.1.0
+	github.com/Aarvion-AI/aarvion-sdk-go v0.2.0
 	github.com/openai/openai-go/v3 v3.71.1
 )
 

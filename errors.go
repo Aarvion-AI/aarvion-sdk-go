@@ -1,6 +1,7 @@
 package aarvion
 
 import (
+	"context"
 	"errors"
 	"strings"
 )
@@ -44,6 +45,7 @@ type PolicyDenied struct {
 	Reason     string
 	HTTPStatus int
 	PolicyIDs  []string
+	Ticket     string
 }
 
 func (e *PolicyDenied) As(target any) bool {
@@ -66,6 +68,74 @@ func NewPolicyDenied(policyID, reason string, httpStatus int, policyIDs []string
 		HTTPStatus:   httpStatus,
 		PolicyIDs:    ids,
 	}
+}
+
+func (e *PolicyDenied) withTicket(ticket string) *PolicyDenied {
+	e.Ticket = ticket
+	return e
+}
+
+type Parked struct {
+	Denied *PolicyDenied
+	Action *ParkAction
+}
+
+func (e *Parked) Error() string { return e.Denied.Error() }
+
+func (e *Parked) Unwrap() error { return e.Denied }
+
+type ActionParked struct {
+	AarvionError
+	Ticket     string
+	StatusURL  string
+	RetryAfter int
+	PolicyID   string
+	Reason     string
+	waiter     func(ctx context.Context) (bool, error)
+}
+
+func (e *ActionParked) As(target any) bool {
+	if t, ok := target.(**AarvionError); ok {
+		*t = &e.AarvionError
+		return true
+	}
+	return false
+}
+
+func (e *ActionParked) Wait(ctx context.Context) (bool, error) {
+	if e.waiter == nil {
+		return false, newAarvionError("this parked action has no approval service to wait on")
+	}
+	return e.waiter(ctx)
+}
+
+type ActionInProgress struct {
+	AarvionError
+	Ticket     string
+	ExecutedAt string
+}
+
+func (e *ActionInProgress) As(target any) bool {
+	if t, ok := target.(**AarvionError); ok {
+		*t = &e.AarvionError
+		return true
+	}
+	return false
+}
+
+type ActionAlreadyExecuted struct {
+	AarvionError
+	Ticket     string
+	ExecutedAt string
+	StatusCode int
+}
+
+func (e *ActionAlreadyExecuted) As(target any) bool {
+	if t, ok := target.(**AarvionError); ok {
+		*t = &e.AarvionError
+		return true
+	}
+	return false
 }
 
 func newAarvionError(msg string) *AarvionError { return &AarvionError{Msg: msg} }
